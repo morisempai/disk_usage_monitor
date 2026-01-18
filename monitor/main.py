@@ -1,6 +1,16 @@
 from simpler_drop import BallDropEngine, Canvas, LedController, TerminalCanvas
 import time
 import shutil
+import os
+import argparse
+
+parser = argparse.ArgumentParser(
+     prog="filesystemMonitor",
+     description="display fs utilization using COM port"
+)
+parser.add_argument('--path')
+parser.add_argument('--style', choices=['sand'], default="sand")
+
 
 class LedCanvas(Canvas):
     def __init__(self, fps=10, filling_frames=10):
@@ -36,7 +46,23 @@ class LedCanvas(Canvas):
 
 
 class DiskUsageGauge(BallDropEngine):
-    def start(self, path="C:\\Users\\moris\\led"):
+    def __init__(self, width=9, height=8):
+        super().__init__(width, height)
+        self._monitoring_path = ""
+
+    @property
+    def monitoring_path(self):
+        return self._monitor_path
+    
+    @monitoring_path.setter
+    def monitoring_path(self, path):
+        if os.path.exists(path=path):
+            self._monitoring_path = path
+        else:
+            raise ValueError("Path does't exist")
+
+
+    def start(self):
         offset = 0
         for y in range(self.height//2, self.height):
             self.pixels[y][offset] = self.OBSTICLE
@@ -45,14 +71,13 @@ class DiskUsageGauge(BallDropEngine):
             self.pixels[y][-offset-2] = self.OBSTICLE
             offset += 1
         
-        self.monitoring_path = path
-        self.usage = shutil.disk_usage(path=self.monitoring_path)
+        self.usage = shutil.disk_usage(path=self._monitoring_path)
         self.gauge = self.usage.used*self.width*self.height/self.usage.total
         self.displayed_gauge = 0
         self.counter = 0
     
     def loop(self):
-        self.usage = shutil.disk_usage(path=self.monitoring_path)
+        self.usage = shutil.disk_usage(path=self._monitoring_path)
         self.gauge = self.usage.used*25//self.usage.total
         self.counter += 1
         if self.counter%7 == 0:
@@ -68,7 +93,13 @@ class DiskUsageGauge(BallDropEngine):
             self.displayed_gauge -= 1
 
 if __name__ == "__main__":
-    engine = DiskUsageGauge()
+    args = parser.parse_args()
+    if args.style == "sand":
+        engine = DiskUsageGauge()
+    else:
+        raise ValueError("unknown style name")
+    engine.monitoring_path = args.path
     engine.add_canvas(LedCanvas(fps=4))
     # engine.add_canvas(TerminalCanvas(fps=4))
     engine.run()
+
