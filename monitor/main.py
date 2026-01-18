@@ -9,13 +9,14 @@ parser = argparse.ArgumentParser(
      description="display fs utilization using COM port"
 )
 parser.add_argument('--path')
+parser.add_argument('--port')
 parser.add_argument('--style', choices=['sand'], default="sand")
 
 
 class LedCanvas(Canvas):
-    def __init__(self, fps=10, filling_frames=10):
+    def __init__(self, port_name, fps=10, filling_frames=10):
         super().__init__(fps)
-        self.led_controller = LedController()
+        self.led_controller = LedController(port_name=port_name)
         self.old_matrix = []
         self.filling_frames = filling_frames
 
@@ -99,7 +100,7 @@ if __name__ == "__main__":
     else:
         raise ValueError("unknown style name")
     engine.monitoring_path = args.path
-    engine.add_canvas(LedCanvas(fps=4))
+    engine.add_canvas(LedCanvas(port_name=args.port, fps=4))
     # engine.add_canvas(TerminalCanvas(fps=4))
     engine.run()
 
